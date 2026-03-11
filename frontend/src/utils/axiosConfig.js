@@ -12,7 +12,8 @@ const BASE_URL = (envBaseUrl || fallbackBaseUrl).replace(/\/+$/, "");
 axios.defaults.baseURL = BASE_URL;
 axios.defaults.withCredentials = true;
 axios.defaults.headers.common["X-Requested-With"] = "XMLHttpRequest";
-axios.defaults.timeout = 15000;
+// Increased timeout for Render free tier cold starts (can take 30-60s)
+axios.defaults.timeout = 90000; // 90 seconds
 
 // Add auth token to requests
 axios.interceptors.request.use(
