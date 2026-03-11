@@ -11,24 +11,21 @@ php artisan config:clear || true
 echo "Waiting for database..."
 sleep 5
 
-# Drop all tables manually (including ones without prefix)
-echo "Dropping all tables..."
-php artisan db:wipe --force || echo "Wipe failed, continuing..."
-
-# Manually drop password_reset_tokens if it exists (without prefix)
-echo "Dropping password_reset_tokens table if exists..."
-php artisan tinker --execute="DB::statement('DROP TABLE IF EXISTS password_reset_tokens CASCADE');" || echo "Manual drop failed, continuing..."
-
-# Run migrations fresh (drop all tables and recreate)
-echo "Running fresh migrations..."
-php artisan migrate:fresh --force --seed || {
-    echo "Fresh migration failed! Checking database connection..."
-    php artisan tinker --execute="var_dump(DB::connection()->getPdo());" || echo "Database connection failed!"
-    exit 1
+# Run migrations (will skip if tables exist)
+echo "Running migrations..."
+php artisan migrate --force || {
+    echo "Migration failed! Trying to continue anyway..."
 }
 
-# Database already seeded by migrate:fresh
-echo "Database setup complete."
+# Seed database if empty
+echo "Checking if database needs seeding..."
+CATEGORY_COUNT=$(php artisan tinker --execute="echo \App\Models\Category::count();" 2>/dev/null | tail -1)
+if [ "$CATEGORY_COUNT" = "0" ] || [ -z "$CATEGORY_COUNT" ]; then
+    echo "Database is empty. Running seeders..."
+    php artisan db:seed --force || echo "Seeding failed, continuing anyway..."
+else
+    echo "Database already has data. Skipping seeding."
+fi
 
 # Cache config and routes
 echo "Caching configuration..."
