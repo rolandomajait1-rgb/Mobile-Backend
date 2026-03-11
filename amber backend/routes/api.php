@@ -19,6 +19,8 @@ Route::post('/subscribers/unsubscribe', [SubscriberController::class, 'unsubscri
 // Public articles routes (for landing page)
 Route::get('/articles/public', [ArticleController::class, 'publicIndex']);
 Route::get('/articles/public/{article}', [ArticleController::class, 'publicShow']);
+Route::get('/latest-articles', [ArticleController::class, 'latestArticles']);
+Route::get('/categories/{slug}/articles', [CategoryController::class, 'articles']);
 
 // Protected user routes
 Route::get('/user', [AuthController::class, 'userDetails'])->middleware('auth:sanctum');

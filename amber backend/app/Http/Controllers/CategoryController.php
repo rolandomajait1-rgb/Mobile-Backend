@@ -68,4 +68,23 @@ class CategoryController extends Controller
 
         return response()->json(['message' => 'Category deleted successfully']);
     }
+
+    /**
+     * Get articles by category slug (public)
+     */
+    public function articles(Request $request, $slug)
+    {
+        $category = Category::where('name', 'like', $slug)->firstOrFail();
+        
+        $limit = $request->get('limit', 10);
+        
+        $articles = $category->articles()
+            ->with(['category', 'tags', 'author'])
+            ->where('status', 'published')
+            ->orderBy('published_at', 'desc')
+            ->limit($limit)
+            ->get();
+
+        return response()->json($articles);
+    }
 }

@@ -87,6 +87,22 @@ class ArticleController extends Controller
     }
 
     /**
+     * Get latest published articles
+     */
+    public function latestArticles(Request $request)
+    {
+        $limit = $request->get('limit', 10);
+        
+        $articles = Article::with(['category', 'tags', 'author'])
+            ->where('status', 'published')
+            ->orderBy('published_at', 'desc')
+            ->limit($limit)
+            ->get();
+
+        return response()->json($articles);
+    }
+
+    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
