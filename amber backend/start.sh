@@ -11,23 +11,16 @@ php artisan config:clear || true
 echo "Waiting for database..."
 sleep 5
 
-# Run migrations
-echo "Running migrations..."
-php artisan migrate --force || {
-    echo "Migration failed! Checking database connection..."
+# Run migrations fresh (drop all tables and recreate)
+echo "Running fresh migrations..."
+php artisan migrate:fresh --force --seed || {
+    echo "Fresh migration failed! Checking database connection..."
     php artisan tinker --execute="var_dump(DB::connection()->getPdo());" || echo "Database connection failed!"
     exit 1
 }
 
-# Seed database if empty (check if categories table is empty)
-echo "Checking if database needs seeding..."
-CATEGORY_COUNT=$(php artisan tinker --execute="echo \App\Models\Category::count();" 2>/dev/null | tail -1)
-if [ "$CATEGORY_COUNT" = "0" ]; then
-    echo "Database is empty. Running seeders..."
-    php artisan db:seed --force || echo "Seeding failed, continuing anyway..."
-else
-    echo "Database already has data. Skipping seeding."
-fi
+# Database already seeded by migrate:fresh
+echo "Database setup complete."
 
 # Cache config and routes
 echo "Caching configuration..."
