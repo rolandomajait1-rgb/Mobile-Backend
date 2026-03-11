@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Route;
 // Public authentication routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 // Public subscriber routes
 Route::post('/subscribers/subscribe', [SubscriberController::class, 'subscribe']);
@@ -26,6 +28,7 @@ Route::get('/categories/{slug}/articles', [CategoryController::class, 'articles'
 Route::get('/user', [AuthController::class, 'userDetails'])->middleware('auth:sanctum');
 Route::put('/user/update', [AuthController::class, 'updateUser'])->middleware('auth:sanctum');
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+Route::delete('/user/delete/{email}', [AuthController::class, 'deleteUser'])->middleware('auth:sanctum');
 
 // Protected API resources
 Route::middleware('auth:sanctum')->group(function () {
