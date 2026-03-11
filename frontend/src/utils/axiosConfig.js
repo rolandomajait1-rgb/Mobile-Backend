@@ -6,7 +6,7 @@ const isLocalhost =
   (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
 const fallbackBaseUrl = isLocalhost
   ? "http://localhost:8000"
-  : "https://official-laverdad-herald.onrender.com";
+  : "https://mobile-backend-84tg.onrender.com";
 const BASE_URL = (envBaseUrl || fallbackBaseUrl).replace(/\/+$/, "");
 
 axios.defaults.baseURL = BASE_URL;
