@@ -112,15 +112,41 @@ class ArticleController extends Controller
             'slug' => 'required|string|max:255|unique:articles',
             'excerpt' => 'nullable|string',
             'content' => 'required|string',
-            'featured_image' => 'nullable|string',
+            'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'status' => 'required|in:draft,published,archived',
             'category_id' => 'required|exists:categories,id',
             'tag_ids' => 'nullable|array',
             'tag_ids.*' => 'exists:tags,id',
         ]);
 
+        // Handle image upload to Cloudinary
+        $imageUrl = null;
+        if ($request->hasFile('featured_image')) {
+            try {
+                $image = $request->file('featured_image');
+                $uploadedFile = cloudinary()->upload($image->getRealPath(), [
+                    'folder' => 'articles',
+                    'transformation' => [
+                        'width' => 1200,
+                        'height' => 630,
+                        'crop' => 'limit'
+                    ]
+                ]);
+                $imageUrl = $uploadedFile->getSecurePath();
+            } catch (\Exception $e) {
+                \Log::error('Cloudinary upload failed: ' . $e->getMessage());
+                // Continue without image
+            }
+        }
+
         $article = Article::create([
-            ...$validated,
+            'title' => $validated['title'],
+            'slug' => $validated['slug'],
+            'excerpt' => $validated['excerpt'] ?? null,
+            'content' => $validated['content'],
+            'featured_image' => $imageUrl,
+            'status' => $validated['status'],
+            'category_id' => $validated['category_id'],
             'author_id' => $request->user()->id,
             'author_name' => $request->user()->name,
         ]);
@@ -159,12 +185,32 @@ class ArticleController extends Controller
             'slug' => 'sometimes|string|max:255|unique:articles,slug,'.$article->id,
             'excerpt' => 'nullable|string',
             'content' => 'sometimes|string',
-            'featured_image' => 'nullable|string',
+            'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'status' => 'sometimes|in:draft,published,archived',
             'category_id' => 'sometimes|exists:categories,id',
             'tag_ids' => 'nullable|array',
             'tag_ids.*' => 'exists:tags,id',
         ]);
+
+        // Handle image upload to Cloudinary
+        if ($request->hasFile('featured_image')) {
+            try {
+                $image = $request->file('featured_image');
+                $uploadedFile = cloudinary()->upload($image->getRealPath(), [
+                    'folder' => 'articles',
+                    'transformation' => [
+                        'width' => 1200,
+                        'height' => 630,
+                        'crop' => 'limit'
+                    ]
+                ]);
+                $validated['featured_image'] = $uploadedFile->getSecurePath();
+            } catch (\Exception $e) {
+                \Log::error('Cloudinary upload failed: ' . $e->getMessage());
+                // Keep existing image if upload fails
+                unset($validated['featured_image']);
+            }
+        }
 
         $article->update($validated);
 
