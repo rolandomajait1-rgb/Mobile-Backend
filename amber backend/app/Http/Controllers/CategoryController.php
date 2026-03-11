@@ -74,7 +74,12 @@ class CategoryController extends Controller
      */
     public function articles(Request $request, $slug)
     {
-        $category = Category::where('name', 'like', $slug)->firstOrFail();
+        // Try to find category by name (case-insensitive)
+        $category = Category::whereRaw('LOWER(name) = ?', [strtolower($slug)])->first();
+        
+        if (!$category) {
+            return response()->json([], 200); // Return empty array if category not found
+        }
         
         $limit = $request->get('limit', 10);
         
