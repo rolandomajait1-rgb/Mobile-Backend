@@ -1,0 +1,14 @@
+# Deployment documentation
+DEPLOYMENT_GUIDE.md
+DEPLOY_CHECKLIST.md
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
