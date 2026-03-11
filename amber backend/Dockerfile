@@ -57,7 +57,8 @@ RUN echo '<Directory /var/www/html/public>\n\
 EXPOSE 80
 
 # Start Apache
-CMD php artisan config:cache && \
-    php artisan route:cache && \
+CMD php artisan config:clear && \
     php artisan migrate --force && \
+    php artisan config:cache && \
+    php artisan route:cache && \
     apache2-foreground
