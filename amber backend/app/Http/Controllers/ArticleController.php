@@ -123,18 +123,24 @@ class ArticleController extends Controller
         $imageUrl = null;
         if ($request->hasFile('featured_image')) {
             try {
-                $image = $request->file('featured_image');
-                $uploadedFile = cloudinary()->upload($image->getRealPath(), [
-                    'folder' => 'articles',
-                    'transformation' => [
-                        'width' => 1200,
-                        'height' => 630,
-                        'crop' => 'limit'
-                    ]
-                ]);
-                $imageUrl = $uploadedFile->getSecurePath();
+                if (function_exists('cloudinary')) {
+                    $image = $request->file('featured_image');
+                    $uploadedFile = cloudinary()->upload($image->getRealPath(), [
+                        'folder' => 'articles',
+                        'transformation' => [
+                            'width' => 1200,
+                            'height' => 630,
+                            'crop' => 'limit'
+                        ]
+                    ]);
+                    $imageUrl = $uploadedFile->getSecurePath();
+                } else {
+                    // Fallback: save to public storage
+                    $path = $request->file('featured_image')->store('articles', 'public');
+                    $imageUrl = '/storage/' . $path;
+                }
             } catch (\Exception $e) {
-                \Log::error('Cloudinary upload failed: ' . $e->getMessage());
+                \Log::error('Image upload failed: ' . $e->getMessage());
                 // Continue without image
             }
         }
@@ -195,18 +201,24 @@ class ArticleController extends Controller
         // Handle image upload to Cloudinary
         if ($request->hasFile('featured_image')) {
             try {
-                $image = $request->file('featured_image');
-                $uploadedFile = cloudinary()->upload($image->getRealPath(), [
-                    'folder' => 'articles',
-                    'transformation' => [
-                        'width' => 1200,
-                        'height' => 630,
-                        'crop' => 'limit'
-                    ]
-                ]);
-                $validated['featured_image'] = $uploadedFile->getSecurePath();
+                if (function_exists('cloudinary')) {
+                    $image = $request->file('featured_image');
+                    $uploadedFile = cloudinary()->upload($image->getRealPath(), [
+                        'folder' => 'articles',
+                        'transformation' => [
+                            'width' => 1200,
+                            'height' => 630,
+                            'crop' => 'limit'
+                        ]
+                    ]);
+                    $validated['featured_image'] = $uploadedFile->getSecurePath();
+                } else {
+                    // Fallback: save to public storage
+                    $path = $request->file('featured_image')->store('articles', 'public');
+                    $validated['featured_image'] = '/storage/' . $path;
+                }
             } catch (\Exception $e) {
-                \Log::error('Cloudinary upload failed: ' . $e->getMessage());
+                \Log::error('Image upload failed: ' . $e->getMessage());
                 // Keep existing image if upload fails
                 unset($validated['featured_image']);
             }
