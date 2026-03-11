@@ -19,6 +19,16 @@ php artisan migrate --force || {
     exit 1
 }
 
+# Seed database if empty (check if categories table is empty)
+echo "Checking if database needs seeding..."
+CATEGORY_COUNT=$(php artisan tinker --execute="echo \App\Models\Category::count();" 2>/dev/null | tail -1)
+if [ "$CATEGORY_COUNT" = "0" ]; then
+    echo "Database is empty. Running seeders..."
+    php artisan db:seed --force || echo "Seeding failed, continuing anyway..."
+else
+    echo "Database already has data. Skipping seeding."
+fi
+
 # Cache config and routes
 echo "Caching configuration..."
 php artisan config:cache
