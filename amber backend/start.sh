@@ -15,6 +15,10 @@ sleep 5
 echo "Dropping all tables..."
 php artisan db:wipe --force || echo "Wipe failed, continuing..."
 
+# Manually drop password_reset_tokens if it exists (without prefix)
+echo "Dropping password_reset_tokens table if exists..."
+php artisan tinker --execute="DB::statement('DROP TABLE IF EXISTS password_reset_tokens CASCADE');" || echo "Manual drop failed, continuing..."
+
 # Run migrations fresh (drop all tables and recreate)
 echo "Running fresh migrations..."
 php artisan migrate:fresh --force --seed || {
