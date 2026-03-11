@@ -29,6 +29,9 @@ WORKDIR /var/www/html
 # Copy application files
 COPY . .
 
+# Make start script executable
+RUN chmod +x start.sh
+
 # Install dependencies
 RUN composer install --no-dev --optimize-autoloader
 
@@ -56,9 +59,5 @@ RUN echo '<Directory /var/www/html/public>\n\
 # Expose port
 EXPOSE 80
 
-# Start Apache
-CMD php artisan config:clear && \
-    php artisan migrate --force && \
-    php artisan config:cache && \
-    php artisan route:cache && \
-    apache2-foreground
+# Start using our script
+CMD ["./start.sh"]
