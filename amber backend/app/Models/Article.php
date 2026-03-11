@@ -35,7 +35,7 @@ class Article extends Model
         'published_at' => 'datetime',
     ];
 
-    protected $appends = ['featured_image_url', 'is_liked', 'likes_count'];
+    protected $appends = ['featured_image_url'];
 
     /**
      * Get the likes count attribute
