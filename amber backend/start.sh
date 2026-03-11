@@ -11,6 +11,10 @@ php artisan config:clear || true
 echo "Waiting for database..."
 sleep 5
 
+# Drop all tables manually (including ones without prefix)
+echo "Dropping all tables..."
+php artisan db:wipe --force || echo "Wipe failed, continuing..."
+
 # Run migrations fresh (drop all tables and recreate)
 echo "Running fresh migrations..."
 php artisan migrate:fresh --force --seed || {
