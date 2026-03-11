@@ -36,6 +36,57 @@ class ArticleController extends Controller
     }
 
     /**
+     * Public listing of published articles (no auth required)
+     */
+    public function publicIndex(Request $request)
+    {
+        $query = Article::with(['category', 'tags', 'author'])
+            ->where('status', 'published');
+
+        if ($request->has('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        if ($request->has('search')) {
+            $query->where(function($q) use ($request) {
+                $q->where('title', 'like', '%'.$request->search.'%')
+                  ->orWhere('content', 'like', '%'.$request->search.'%');
+            });
+        }
+
+        if ($request->has('latest') && $request->latest) {
+            $limit = $request->get('limit', 9);
+            $articles = $query->orderBy('published_at', 'desc')->limit($limit)->get();
+            return response()->json($articles);
+        }
+
+        $articles = $query->orderBy('published_at', 'desc')->paginate(15);
+
+        return response()->json($articles);
+    }
+
+    /**
+     * Public view of a single published article (no auth required)
+     */
+    public function publicShow(Request $request, $id)
+    {
+        $article = Article::with(['category', 'tags', 'author'])
+            ->where('status', 'published')
+            ->findOrFail($id);
+
+        // Log the view (without user_id for public)
+        ArticleInteraction::create([
+            'article_id' => $article->id,
+            'user_id' => null,
+            'type' => ArticleInteraction::TYPE_VIEWED,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        return response()->json($article);
+    }
+
+    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)

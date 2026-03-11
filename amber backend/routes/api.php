@@ -16,6 +16,10 @@ Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/subscribers/subscribe', [SubscriberController::class, 'subscribe']);
 Route::post('/subscribers/unsubscribe', [SubscriberController::class, 'unsubscribe']);
 
+// Public articles routes (for landing page)
+Route::get('/articles/public', [ArticleController::class, 'publicIndex']);
+Route::get('/articles/public/{article}', [ArticleController::class, 'publicShow']);
+
 // Protected user routes
 Route::get('/user', [AuthController::class, 'userDetails'])->middleware('auth:sanctum');
 Route::put('/user/update', [AuthController::class, 'updateUser'])->middleware('auth:sanctum');
