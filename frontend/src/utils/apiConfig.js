@@ -1,11 +1,6 @@
 // API Configuration
 const envBaseUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
-const isLocalhost =
-  typeof window !== 'undefined' &&
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-const fallbackBaseUrl = isLocalhost
-  ? 'http://localhost:8000'
-  : 'https://mobile-backend-84tg.onrender.com';
+const fallbackBaseUrl = 'http://localhost:8000';
 
 export const API_BASE_URL = (envBaseUrl || fallbackBaseUrl).replace(/\/+$/, '');
 

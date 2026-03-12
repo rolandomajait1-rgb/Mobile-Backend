@@ -296,4 +296,36 @@ class ArticleController extends Controller
 
         return response()->json(['message' => 'Article share recorded']);
     }
+
+    /**
+     * Get the authenticated user's liked articles
+     */
+    public function likedArticles(Request $request)
+    {
+        $articles = Article::with(['category', 'tags', 'author'])
+            ->whereHas('interactions', function ($query) use ($request) {
+                $query->where('user_id', $request->user()->id)
+                      ->where('type', ArticleInteraction::TYPE_LIKED);
+            })
+            ->orderBy('published_at', 'desc')
+            ->get(); // Using get instead of paginate to make it easier for frontend if it wasn't expecting pagination
+
+        return response()->json($articles);
+    }
+
+    /**
+     * Get the authenticated user's shared articles
+     */
+    public function sharedArticles(Request $request)
+    {
+        $articles = Article::with(['category', 'tags', 'author'])
+            ->whereHas('interactions', function ($query) use ($request) {
+                $query->where('user_id', $request->user()->id)
+                      ->where('type', ArticleInteraction::TYPE_SHARED);
+            })
+            ->orderBy('published_at', 'desc')
+            ->get();
+
+        return response()->json($articles);
+    }
 }

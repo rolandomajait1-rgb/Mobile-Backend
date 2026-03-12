@@ -30,22 +30,6 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json(['message' => 'Email already verified']);
     })->name('verification.notice');
     
-    Route::get('/email/verify/{id}/{hash}', function (Illuminate\Http\Request $request, string $id, string $hash) {
-        $user = \App\Models\User::findOrFail($id);
-        
-        if (!hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
-            return response()->json(['message' => 'Invalid verification link'], 400);
-        }
-        
-        if ($user->hasVerifiedEmail()) {
-            return response()->json(['message' => 'Email already verified']);
-        }
-        
-        $user->markEmailAsVerified();
-        
-        return response()->json(['message' => 'Email verified successfully']);
-    })->name('verification.verify');
-    
     Route::post('/email/verification-notification', function (Illuminate\Http\Request $request) {
         $request->user()->sendEmailVerificationNotification();
         
@@ -53,11 +37,29 @@ Route::middleware('auth:sanctum')->group(function () {
     })->middleware('throttle:6,1')->name('verification.send');
 });
 
+Route::get('/email/verify/{id}/{hash}', function (Illuminate\Http\Request $request, string $id, string $hash) {
+    $user = \App\Models\User::findOrFail($id);
+    
+    if (!hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+        return response()->json(['message' => 'Invalid verification link'], 400);
+    }
+    
+    if ($user->hasVerifiedEmail()) {
+        return response()->json(['message' => 'Email already verified']);
+    }
+    
+    $user->markEmailAsVerified();
+    
+    return response()->json(['message' => 'Email verified successfully']);
+})->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
+
 // Protected user routes
 Route::get('/user', [AuthController::class, 'userDetails'])->middleware('auth:sanctum');
 Route::put('/user/update', [AuthController::class, 'updateUser'])->middleware('auth:sanctum');
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 Route::delete('/user/delete/{email}', [AuthController::class, 'deleteUser'])->middleware('auth:sanctum');
+Route::get('/user/liked-articles', [ArticleController::class, 'likedArticles'])->middleware('auth:sanctum');
+Route::get('/user/shared-articles', [ArticleController::class, 'sharedArticles'])->middleware('auth:sanctum');
 
 // Protected API resources
 Route::middleware('auth:sanctum')->group(function () {

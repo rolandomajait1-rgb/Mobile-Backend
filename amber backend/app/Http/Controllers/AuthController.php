@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Auth\Events\Registered;
 
 class AuthController extends Controller
 {
@@ -32,24 +33,8 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
-        // Send welcome email
-        try {
-            Mail::raw(
-                "Welcome to La Verdad Herald!\n\n" .
-                "Hi {$user->name},\n\n" .
-                "Thank you for registering with La Verdad Herald. Your account has been created successfully.\n\n" .
-                "You can now login and start exploring our articles.\n\n" .
-                "Best regards,\n" .
-                "La Verdad Herald Team",
-                function ($message) use ($user) {
-                    $message->to($user->email)
-                            ->subject('Welcome to La Verdad Herald!');
-                }
-            );
-        } catch (\Exception $e) {
-            // Log error but don't fail registration
-            \Log::error('Failed to send welcome email: ' . $e->getMessage());
-        }
+        // Trigger the Registered event to send the verification email
+        event(new Registered($user));
 
         return response()->json([
             'user' => $user,

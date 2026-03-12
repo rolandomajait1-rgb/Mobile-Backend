@@ -11,15 +11,28 @@ export default function VerifyEmail() {
   const [message, setMessage] = useState('Verifying your email...');
 
   useEffect(() => {
-    const token = searchParams.get('token');
+    const verificationUrl = searchParams.get('url');
 
-    if (!token) {
+    if (!verificationUrl) {
       setStatus('error');
       setMessage('Invalid verification link. Please check your email for the correct link.');
       return;
     }
 
-    window.location.href = getApiUrl(`/api/email/verify-token?token=${token}`);
+    // Call the backend API signed URL
+    axios.get(verificationUrl, {
+      headers: {
+        Accept: 'application/json'
+      }
+    })
+    .then(response => {
+      setStatus('success');
+      setMessage('Your email has been verified successfully!');
+    })
+    .catch(error => {
+      setStatus('error');
+      setMessage(error.response?.data?.message || 'Verification failed. The link may have expired.');
+    });
   }, [searchParams]);
 
   return (
