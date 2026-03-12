@@ -24,6 +24,35 @@ Route::get('/articles/public/{article}', [ArticleController::class, 'publicShow'
 Route::get('/latest-articles', [ArticleController::class, 'latestArticles']);
 Route::get('/categories/{slug}/articles', [CategoryController::class, 'articles']);
 
+// Email verification routes
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/email/verify', function () {
+        return response()->json(['message' => 'Email already verified']);
+    })->name('verification.notice');
+    
+    Route::get('/email/verify/{id}/{hash}', function (Illuminate\Http\Request $request, string $id, string $hash) {
+        $user = \App\Models\User::findOrFail($id);
+        
+        if (!hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+            return response()->json(['message' => 'Invalid verification link'], 400);
+        }
+        
+        if ($user->hasVerifiedEmail()) {
+            return response()->json(['message' => 'Email already verified']);
+        }
+        
+        $user->markEmailAsVerified();
+        
+        return response()->json(['message' => 'Email verified successfully']);
+    })->name('verification.verify');
+    
+    Route::post('/email/verification-notification', function (Illuminate\Http\Request $request) {
+        $request->user()->sendEmailVerificationNotification();
+        
+        return response()->json(['message' => 'Verification link sent']);
+    })->middleware('throttle:6,1')->name('verification.send');
+});
+
 // Protected user routes
 Route::get('/user', [AuthController::class, 'userDetails'])->middleware('auth:sanctum');
 Route::put('/user/update', [AuthController::class, 'updateUser'])->middleware('auth:sanctum');
