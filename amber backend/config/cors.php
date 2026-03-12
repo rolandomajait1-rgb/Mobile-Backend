@@ -3,12 +3,14 @@
 return [
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
     'allowed_methods' => ['*'],
-    'allowed_origins' => [
-        'https://frontend-ten-psi-9hutf2paf3.vercel.app',
+    'allowed_origins' => array_filter([
+        env('FRONTEND_URL'),
         'http://localhost:5173',
         'http://localhost:3000',
-    ],
-    'allowed_origins_patterns' => ['/\.vercel\.app$/'],
+        'http://127.0.0.1:5173',
+        'http://127.0.0.1:3000',
+    ]),
+    'allowed_origins_patterns' => ['/\.vercel\.app$/', '/\.netlify\.app$/'],
     'allowed_headers' => ['*'],
     'exposed_headers' => ['*'],
     'max_age' => 86400,

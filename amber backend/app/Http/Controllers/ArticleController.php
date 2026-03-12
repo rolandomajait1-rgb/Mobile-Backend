@@ -40,27 +40,41 @@ class ArticleController extends Controller
      */
     public function publicIndex(Request $request)
     {
-        $query = Article::with(['category', 'tags', 'author'])
-            ->where('status', 'published');
+        // Sanitize cache key inputs
+        $cacheParams = [
+            'category_id' => $request->integer('category_id'),
+            'search' => substr($request->string('search'), 0, 100),
+            'latest' => $request->boolean('latest'),
+            'limit' => min($request->integer('limit', 9), 50),
+            'page' => $request->integer('page', 1),
+        ];
+        $cacheKey = 'articles_public_' . md5(json_encode($cacheParams));
+        
+        $articles = cache()->remember($cacheKey, 300, function() use ($request, $cacheParams) {
+            $query = Article::select('id', 'title', 'slug', 'excerpt', 'featured_image', 'published_at', 'category_id', 'author_id', 'author_name')
+                ->with([
+                    'category:id,name,slug',
+                    'tags:id,name,slug',
+                ])
+                ->where('status', 'published');
 
-        if ($request->has('category_id')) {
-            $query->where('category_id', $request->category_id);
-        }
+            if ($cacheParams['category_id']) {
+                $query->where('category_id', $cacheParams['category_id']);
+            }
 
-        if ($request->has('search')) {
-            $query->where(function($q) use ($request) {
-                $q->where('title', 'like', '%'.$request->search.'%')
-                  ->orWhere('content', 'like', '%'.$request->search.'%');
-            });
-        }
+            if ($cacheParams['search']) {
+                $query->where(function($q) use ($cacheParams) {
+                    $q->where('title', 'like', '%'.$cacheParams['search'].'%')
+                      ->orWhere('excerpt', 'like', '%'.$cacheParams['search'].'%');
+                });
+            }
 
-        if ($request->has('latest') && $request->latest) {
-            $limit = $request->get('limit', 9);
-            $articles = $query->orderBy('published_at', 'desc')->limit($limit)->get();
-            return response()->json($articles);
-        }
+            if ($cacheParams['latest']) {
+                return $query->orderBy('published_at', 'desc')->limit($cacheParams['limit'])->get();
+            }
 
-        $articles = $query->orderBy('published_at', 'desc')->paginate(15);
+            return $query->orderBy('published_at', 'desc')->paginate(15);
+        });
 
         return response()->json($articles);
     }
@@ -70,18 +84,23 @@ class ArticleController extends Controller
      */
     public function publicShow(Request $request, $id)
     {
-        $article = Article::with(['category', 'tags', 'author'])
+        $article = Article::with([
+                'category:id,name,slug',
+                'tags:id,name,slug',
+            ])
             ->where('status', 'published')
             ->findOrFail($id);
 
-        // Log the view (without user_id for public)
-        ArticleInteraction::create([
-            'article_id' => $article->id,
-            'user_id' => null,
-            'type' => ArticleInteraction::TYPE_VIEWED,
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-        ]);
+        // Log the view asynchronously (don't wait for it)
+        dispatch(function() use ($article, $request) {
+            ArticleInteraction::create([
+                'article_id' => $article->id,
+                'user_id' => null,
+                'type' => ArticleInteraction::TYPE_VIEWED,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+        })->afterResponse();
 
         return response()->json($article);
     }
@@ -91,13 +110,19 @@ class ArticleController extends Controller
      */
     public function latestArticles(Request $request)
     {
-        $limit = $request->get('limit', 10);
+        $limit = min($request->integer('limit', 10), 50); // Max 50
         
-        $articles = Article::with(['category', 'tags', 'author'])
-            ->where('status', 'published')
-            ->orderBy('published_at', 'desc')
-            ->limit($limit)
-            ->get();
+        $articles = cache()->remember('latest_articles_' . $limit, 300, function() use ($limit) {
+            return Article::select('id', 'title', 'slug', 'excerpt', 'featured_image', 'published_at', 'category_id', 'author_name')
+                ->with([
+                    'category:id,name,slug',
+                    'tags:id,name,slug',
+                ])
+                ->where('status', 'published')
+                ->orderBy('published_at', 'desc')
+                ->limit($limit)
+                ->get();
+        });
 
         return response()->json($articles);
     }

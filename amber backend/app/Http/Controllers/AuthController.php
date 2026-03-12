@@ -33,11 +33,18 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
-        // Trigger the Registered event to send the verification email
-        event(new Registered($user));
+        // Send verification email asynchronously (don't wait for it)
+        dispatch(function() use ($user) {
+            event(new Registered($user));
+        })->afterResponse();
 
         return response()->json([
-            'user' => $user,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+            ],
             'token' => $token,
         ], 201);
     }
@@ -52,7 +59,9 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::select('id', 'name', 'email', 'password', 'role', 'email_verified_at')
+            ->where('email', $request->email)
+            ->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
@@ -60,10 +69,19 @@ class AuthController extends Controller
             ]);
         }
 
+        // Delete old tokens to keep database clean
+        $user->tokens()->delete();
+        
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
-            'user' => $user,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'email_verified_at' => $user->email_verified_at,
+            ],
             'token' => $token,
         ]);
     }

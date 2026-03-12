@@ -1,6 +1,15 @@
 # Deployment documentation
 DEPLOYMENT_GUIDE.md
 DEPLOY_CHECKLIST.md
+FIX_REGISTRATION_ERROR.md
+PERFORMANCE_OPTIMIZATIONS.md
+TEST_ENDPOINTS.md
+API_TEST_RESULTS.md
+
+# Environment files
+.env
+.env.*
+!.env.example
 
 # OS files
 .DS_Store
