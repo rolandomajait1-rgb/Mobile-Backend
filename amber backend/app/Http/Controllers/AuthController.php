@@ -33,10 +33,13 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
-        // Send verification email asynchronously (don't wait for it)
-        dispatch(function() use ($user) {
+        // Send verification email (sync for free tier reliability)
+        try {
             event(new Registered($user));
-        })->afterResponse();
+        } catch (\Exception $e) {
+            \Log::error('Email verification failed: ' . $e->getMessage());
+            // Continue anyway - user can still use the app
+        }
 
         return response()->json([
             'user' => [
