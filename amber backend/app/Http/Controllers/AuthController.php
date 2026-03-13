@@ -24,32 +24,46 @@ class AuthController extends Controller
             'password' => 'required|string|min:8|confirmed',
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => 'user',
-        ]);
-
-        $token = $user->createToken('auth-token')->plainTextToken;
-
-        // Send verification email (sync for free tier reliability)
         try {
-            event(new Registered($user));
-        } catch (\Exception $e) {
-            \Log::error('Email verification failed: ' . $e->getMessage());
-            // Continue anyway - user can still use the app
-        }
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'role' => 'user',
+            ]);
 
-        return response()->json([
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-            ],
-            'token' => $token,
-        ], 201);
+            $token = $user->createToken('auth-token')->plainTextToken;
+
+            // Send verification email - don't let it fail registration
+            try {
+                event(new Registered($user));
+                \Log::info('Verification email sent', ['email' => $user->email]);
+            } catch (\Exception $e) {
+                \Log::error('Email verification failed but registration succeeded', [
+                    'email' => $user->email,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                // Don't throw - user is already created
+            }
+
+            return response()->json([
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                ],
+                'token' => $token,
+                'message' => 'Registration successful! Check your email to verify your account.',
+            ], 201);
+        } catch (\Exception $e) {
+            \Log::error('Registration failed', [
+                'email' => $request->email,
+                'error' => $e->getMessage()
+            ]);
+            throw $e;
+        }
     }
 
     /**
