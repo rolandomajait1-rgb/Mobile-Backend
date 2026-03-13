@@ -8,6 +8,25 @@ use App\Http\Controllers\SubscriberController;
 use App\Http\Controllers\TeamMemberController;
 use Illuminate\Support\Facades\Route;
 
+/*
+|--------------------------------------------------------------------------
+| API Routes - Backward Compatibility
+|--------------------------------------------------------------------------
+|
+| These routes maintain backward compatibility with existing frontend.
+| New RESTful routes are available with /v2 prefix.
+|
+*/
+
+// ============================================================================
+// V2 API - Clean RESTful Structure
+// ============================================================================
+Route::prefix('v2')->group(base_path('routes/api_v2.php'));
+
+// ============================================================================
+// V1 API - Legacy Routes (Backward Compatibility)
+// ============================================================================
+
 // Health check endpoint
 Route::get('/health', function () {
     return response()->json([
