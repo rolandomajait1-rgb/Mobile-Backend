@@ -11,16 +11,15 @@ export default function VerifyEmail() {
   const [message, setMessage] = useState('Verifying your email...');
 
   useEffect(() => {
-    const verificationUrl = searchParams.get('url');
+    const token = searchParams.get('token');
 
-    if (!verificationUrl) {
+    if (!token) {
       setStatus('error');
       setMessage('Invalid verification link. Please check your email for the correct link.');
       return;
     }
 
-    // Call the backend API signed URL
-    axios.get(verificationUrl, {
+    axios.get(`${getApiUrl()}/email/verify-token?token=${token}`, {
       headers: {
         Accept: 'application/json'
       }
