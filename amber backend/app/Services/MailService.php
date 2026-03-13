@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Log;
 class MailService {
 public function sendVerificationEmail(User $user, string $token): bool {
 try {
-$url = config('app.url').'/api/email/verify-token?token='.$token;
+$url = env('FRONTEND_URL').'/verify-email?token='.$token;
 $html = view('emails.verify-email', ['user' => $user, 'verificationUrl' => $url])->render();
 return $this->send($user, 'Verify Your Email Address', $html);
 } catch (\Exception $e) {
