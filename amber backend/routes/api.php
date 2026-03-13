@@ -8,6 +8,15 @@ use App\Http\Controllers\SubscriberController;
 use App\Http\Controllers\TeamMemberController;
 use Illuminate\Support\Facades\Route;
 
+// Health check endpoint
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'timestamp' => now()->toIso8601String(),
+        'service' => 'Amber Backend API'
+    ]);
+});
+
 // Public authentication routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login'])->name('login');

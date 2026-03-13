@@ -20,8 +20,17 @@ class AuthController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                'unique:users',
+                'regex:/^[a-zA-Z0-9._%+-]+@student\.laverdad\.edu\.ph$/'
+            ],
             'password' => 'required|string|min:8|confirmed',
+        ], [
+            'email.regex' => 'Only @student.laverdad.edu.ph emails are allowed'
         ]);
 
         try {

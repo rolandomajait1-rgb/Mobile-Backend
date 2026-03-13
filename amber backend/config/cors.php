@@ -5,6 +5,7 @@ return [
     'allowed_methods' => ['*'],
     'allowed_origins' => array_values(array_filter([
         env('FRONTEND_URL'),
+        'https://frontend-ten-psi-9hutf2paf3.vercel.app',
         'http://localhost:5173',
         'http://localhost:3000',
         'http://127.0.0.1:5173',
