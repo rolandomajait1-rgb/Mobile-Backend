@@ -186,7 +186,7 @@ class AuthController extends Controller
         // Generate reset token
         $token = Str::random(64);
         
-        // Store token in database (you'll need password_resets table)
+        // Store token in database
         \DB::table('password_reset_tokens')->updateOrInsert(
             ['email' => $request->email],
             [
@@ -195,25 +195,11 @@ class AuthController extends Controller
             ]
         );
 
-        // Send email
+        // Send email using MailService
         try {
-            $resetUrl = env('FRONTEND_URL') . '/reset-password?token=' . $token . '&email=' . urlencode($request->email);
+            $mailService = app(\App\Services\MailService::class);
+            $mailService->sendPasswordResetEmail($user, $token);
             
-            Mail::raw(
-                "Password Reset Request\n\n" .
-                "Hi {$user->name},\n\n" .
-                "You requested to reset your password. Click the link below to reset it:\n\n" .
-                "{$resetUrl}\n\n" .
-                "This link will expire in 60 minutes.\n\n" .
-                "If you didn't request this, please ignore this email.\n\n" .
-                "Best regards,\n" .
-                "La Verdad Herald Team",
-                function ($message) use ($user) {
-                    $message->to($user->email)
-                            ->subject('Reset Your Password');
-                }
-            );
-
             return response()->json(['message' => 'Password reset link sent to your email']);
         } catch (\Exception $e) {
             \Log::error('Failed to send password reset email: ' . $e->getMessage());

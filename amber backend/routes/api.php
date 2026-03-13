@@ -53,6 +53,43 @@ Route::get('/email/verify/{id}/{hash}', function (Illuminate\Http\Request $reque
     return response()->json(['message' => 'Email verified successfully']);
 })->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
 
+// Token-based email verification (for MailService)
+Route::get('/email/verify-token', function (Illuminate\Http\Request $request) {
+    $token = $request->query('token');
+    
+    if (!$token) {
+        return response()->json(['message' => 'Token required'], 400);
+    }
+    
+    $record = \DB::table('email_verification_tokens')
+        ->where('token', hash('sha256', $token))
+        ->first();
+    
+    if (!$record) {
+        return response()->json(['message' => 'Invalid verification token'], 400);
+    }
+    
+    // Check if token expired (24 hours)
+    if (now()->diffInHours($record->created_at) > 24) {
+        return response()->json(['message' => 'Verification token expired'], 400);
+    }
+    
+    $user = \App\Models\User::where('email', $record->email)->first();
+    
+    if (!$user) {
+        return response()->json(['message' => 'User not found'], 404);
+    }
+    
+    if ($user->hasVerifiedEmail()) {
+        return response()->json(['message' => 'Email already verified']);
+    }
+    
+    $user->markEmailAsVerified();
+    \DB::table('email_verification_tokens')->where('email', $record->email)->delete();
+    
+    return response()->json(['message' => 'Email verified successfully']);
+})->middleware('throttle:6,1');
+
 // Protected user routes
 Route::get('/user', [AuthController::class, 'userDetails'])->middleware('auth:sanctum');
 Route::put('/user/update', [AuthController::class, 'updateUser'])->middleware('auth:sanctum');
