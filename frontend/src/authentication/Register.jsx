@@ -52,22 +52,32 @@ export default function Register() {
 
     setIsSubmitting(true);
     try {
+      // First, wake up the backend if it's sleeping (Render free tier)
+      try {
+        await axios.get('/api/health', { timeout: 5000 });
+      } catch (healthError) {
+        console.log('Backend might be waking up...');
+      }
+
       const response = await axios.post('/api/register', {
         name: formData.name,
         email: formData.email,
         password: formData.password,
         password_confirmation: formData.password_confirmation,
       });
+      
       setSuccessMessage('Registration successful! Check your email to verify your account.');
       setTimeout(() => navigate('/login?registered=1'), 2000);
     } catch (error) {
       console.error('Registration error:', error);
-      if (error.code === 'ECONNABORTED') {
-        setErrors({ general: 'Request timed out. Please try again in a few seconds.' });
+      if (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK') {
+        setErrors({ general: 'Server is starting up. Please wait a moment and try again.' });
       } else if (error.response?.data?.errors) {
         setErrors(error.response.data.errors);
       } else if (error.response?.data?.message) {
         setErrors({ general: error.response.data.message });
+      } else if (error.message === 'Network Error') {
+        setErrors({ general: 'Cannot connect to server. Please check your internet connection or try again in a moment.' });
       } else {
         setErrors({ general: 'Registration failed. Please try again.' });
       }
