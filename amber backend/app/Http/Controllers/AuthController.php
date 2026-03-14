@@ -66,7 +66,9 @@ class AuthController extends Controller
                 ],
                 'token' => $token,
                 'message' => 'Registration successful! Check your email to verify your account.',
-            ], 201);
+            ], 201)->header('Access-Control-Allow-Origin', '*')
+              ->header('Access-Control-Allow-Methods', '*')
+              ->header('Access-Control-Allow-Headers', '*');
         } catch (\Exception $e) {
             Log::error('Registration failed', [
                 'email' => $request->email,
