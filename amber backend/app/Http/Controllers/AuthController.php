@@ -43,17 +43,15 @@ class AuthController extends Controller
 
             $token = $user->createToken('auth-token')->plainTextToken;
 
-            // Send verification email - don't let it fail registration
+            // Send verification email directly (more reliable than event)
             try {
-                event(new Registered($user));
+                $user->sendEmailVerificationNotification();
                 \Log::info('Verification email sent', ['email' => $user->email]);
             } catch (\Exception $e) {
                 \Log::error('Email verification failed but registration succeeded', [
                     'email' => $user->email,
                     'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
                 ]);
-                // Don't throw - user is already created
             }
 
             return response()->json([
@@ -62,6 +60,7 @@ class AuthController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'role' => $user->role,
+                    'email_verified_at' => $user->email_verified_at,
                 ],
                 'token' => $token,
                 'message' => 'Registration successful! Check your email to verify your account.',

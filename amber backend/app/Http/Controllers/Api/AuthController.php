@@ -61,9 +61,9 @@ class AuthController extends Controller
 
             $token = $user->createToken('auth-token')->plainTextToken;
 
-            // Send verification email (non-blocking)
+            // Send verification email directly
             try {
-                event(new Registered($user));
+                $user->sendEmailVerificationNotification();
                 \Log::info('Verification email sent', ['email' => $user->email]);
             } catch (\Exception $e) {
                 \Log::error('Email verification failed but registration succeeded', [

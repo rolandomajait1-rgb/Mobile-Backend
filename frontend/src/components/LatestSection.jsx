@@ -15,7 +15,7 @@ export default function LatestSection({ onEdit, onDelete }) {
   useEffect(() => {
     const fetchLatestArticles = async () => {
       try {
-        const response = await axios.get('/api/latest-articles');
+        const response = await axios.get('/api/latest-articles', { timeout: 60000 });
         setLatestArticles(response.data);
       } catch (err) {
         console.error('Error fetching latest articles:', err);

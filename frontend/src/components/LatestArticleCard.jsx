@@ -15,6 +15,7 @@ export default function LatestArticles() {
       try {
         const response = await axios.get('/api/articles/public', {
           params: { latest: true, limit: 9 },
+          timeout: 60000,
         });
         const articlesData = response.data.data || response.data || [];
         setArticles(Array.isArray(articlesData) ? articlesData : []);

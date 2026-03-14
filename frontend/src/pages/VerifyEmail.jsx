@@ -1,12 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import axios from '../utils/axiosConfig';
-
-import { getApiUrl } from '../utils/apiConfig';
 
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const [status, setStatus] = useState('verifying');
   const [message, setMessage] = useState('Verifying your email...');
 
@@ -19,7 +16,8 @@ export default function VerifyEmail() {
       return;
     }
 
-    axios.get(`${getApiUrl()}/email/verify-token?token=${token}`, {
+    axios.get('/api/email/verify-token', {
+      params: { token },
       headers: {
         Accept: 'application/json'
       }
