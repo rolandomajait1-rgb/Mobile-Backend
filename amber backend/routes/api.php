@@ -15,11 +15,15 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Health
-Route::get('/health', fn () => response()->json([
-    'status' => 'ok',
-    'timestamp' => now()->toIso8601String(),
-    'service' => 'La Verdad Herald API',
-]));
+Route::get('/health', function() {
+    return response()->json([
+        'status' => 'ok',
+        'timestamp' => now()->toIso8601String(),
+        'service' => 'La Verdad Herald API',
+    ])->header('Access-Control-Allow-Origin', '*')
+      ->header('Access-Control-Allow-Methods', '*')
+      ->header('Access-Control-Allow-Headers', '*');
+});
 
 // Auth
 Route::post('/register', [AuthController::class, 'register']);
