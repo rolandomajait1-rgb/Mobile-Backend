@@ -18,7 +18,8 @@ class MailService
 
         $frontendUrl = rtrim(env('FRONTEND_URL', config('app.url', '')), '/');
         if (empty($frontendUrl)) {
-            Log::error('FRONTEND_URL not set - set it in .env for valid verification links');
+            Log::error('FRONTEND_URL not set in production - verification links will be invalid');
+            return false;
         }
         try {
             $url = $frontendUrl . '/verify-email?token=' . $token;

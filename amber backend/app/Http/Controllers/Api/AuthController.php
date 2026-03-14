@@ -115,6 +115,12 @@ class AuthController extends Controller
             ]);
         }
 
+        if (!$user->hasVerifiedEmail()) {
+            throw ValidationException::withMessages([
+                'email' => ['Please verify your email before logging in. Check your inbox for the verification link.'],
+            ]);
+        }
+
         // Delete old tokens
         $user->tokens()->delete();
         

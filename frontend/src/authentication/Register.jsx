@@ -52,11 +52,11 @@ export default function Register() {
 
     setIsSubmitting(true);
     try {
-      // First, wake up the backend if it's sleeping (Render free tier)
+      // Wake up backend (Render free tier cold start ~30-60s)
       try {
-        await axios.get('/api/health', { timeout: 5000 });
-      } catch (healthError) {
-        console.log('Backend might be waking up...');
+        await axios.get('/api/health', { timeout: 60000 });
+      } catch {
+        // Proceed anyway - backend may still be starting
       }
 
       const response = await axios.post('/api/register', {
@@ -64,7 +64,7 @@ export default function Register() {
         email: formData.email,
         password: formData.password,
         password_confirmation: formData.password_confirmation,
-      });
+      }, { timeout: 90000 });
       
       setSuccessMessage('Registration successful! Check your email to verify your account.');
       setTimeout(() => navigate('/login?registered=1'), 2000);

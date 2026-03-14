@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
@@ -23,6 +24,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Notification::extend('brevo_verification', fn () => new \App\Channels\BrevoVerificationChannel());
+
         VerifyEmail::createUrlUsing(function (object $notifiable) {
             $verifyUrl = URL::temporarySignedRoute(
                 'verification.verify',

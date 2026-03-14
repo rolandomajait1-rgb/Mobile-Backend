@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
@@ -46,9 +48,9 @@ class AuthController extends Controller
             // Send verification email directly (more reliable than event)
             try {
                 $user->sendEmailVerificationNotification();
-                \Log::info('Verification email sent', ['email' => $user->email]);
+                Log::info('Verification email sent', ['email' => $user->email]);
             } catch (\Exception $e) {
-                \Log::error('Email verification failed but registration succeeded', [
+                Log::error('Email verification failed but registration succeeded', [
                     'email' => $user->email,
                     'error' => $e->getMessage(),
                 ]);
@@ -66,7 +68,7 @@ class AuthController extends Controller
                 'message' => 'Registration successful! Check your email to verify your account.',
             ], 201);
         } catch (\Exception $e) {
-            \Log::error('Registration failed', [
+            Log::error('Registration failed', [
                 'email' => $request->email,
                 'error' => $e->getMessage()
             ]);
@@ -91,6 +93,12 @@ class AuthController extends Controller
         if (!$user || !Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
+            ]);
+        }
+
+        if (!$user->hasVerifiedEmail()) {
+            throw ValidationException::withMessages([
+                'email' => ['Please verify your email before logging in. Check your inbox for the verification link.'],
             ]);
         }
 
@@ -209,7 +217,7 @@ class AuthController extends Controller
         $token = Str::random(64);
         
         // Store token in database
-        \DB::table('password_reset_tokens')->updateOrInsert(
+        DB::table('password_reset_tokens')->updateOrInsert(
             ['email' => $request->email],
             [
                 'token' => Hash::make($token),
@@ -224,7 +232,7 @@ class AuthController extends Controller
             
             return response()->json(['message' => 'Password reset link sent to your email']);
         } catch (\Exception $e) {
-            \Log::error('Failed to send password reset email: ' . $e->getMessage());
+            Log::error('Failed to send password reset email: ' . $e->getMessage());
             return response()->json(['message' => 'Failed to send email'], 500);
         }
     }
@@ -241,7 +249,7 @@ class AuthController extends Controller
         ]);
 
         // Verify token
-        $resetRecord = \DB::table('password_reset_tokens')
+        $resetRecord = DB::table('password_reset_tokens')
             ->where('email', $request->email)
             ->first();
 
@@ -265,8 +273,58 @@ class AuthController extends Controller
         $user->save();
 
         // Delete reset token
-        \DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
 
         return response()->json(['message' => 'Password reset successfully']);
+    }
+
+    /** Verify email with token from link */
+    public function verifyEmail(Request $request)
+    {
+        $token = $request->query('token');
+        if (!$token) {
+            return response()->json(['message' => 'Token required'], 400);
+        }
+
+        $record = DB::table('email_verification_tokens')
+            ->where('token', hash('sha256', $token))
+            ->first();
+
+        if (!$record) {
+            return response()->json(['message' => 'Invalid verification token'], 400);
+        }
+        if (now()->diffInHours($record->created_at) > 24) {
+            return response()->json(['message' => 'Verification token expired'], 400);
+        }
+
+        $user = User::where('email', $record->email)->first();
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+        if ($user->hasVerifiedEmail()) {
+            return response()->json(['message' => 'Email already verified']);
+        }
+
+        $user->markEmailAsVerified();
+        DB::table('email_verification_tokens')->where('email', $record->email)->delete();
+
+        return response()->json(['message' => 'Email verified successfully']);
+    }
+
+    /** Resend verification email (public) */
+    public function resendVerification(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'If that email is registered, a verification link will be sent.'], 200);
+        }
+        if ($user->hasVerifiedEmail()) {
+            return response()->json(['message' => 'Email already verified. You can log in.']);
+        }
+
+        $user->sendEmailVerificationNotification();
+        return response()->json(['message' => 'Verification link sent. Check your inbox.']);
     }
 }

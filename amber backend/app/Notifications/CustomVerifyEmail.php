@@ -2,57 +2,35 @@
 
 namespace App\Notifications;
 
+use App\Contracts\BrevoVerificationNotification;
 use App\Services\MailService;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
-class CustomVerifyEmail extends Notification
+class CustomVerifyEmail extends Notification implements BrevoVerificationNotification
 {
     use Queueable;
 
-    /**
-     * Get the notification's delivery channels.
-     */
     public function via($notifiable): array
     {
-        return ['mail'];
+        return ['brevo_verification'];
     }
 
-    /**
-     * Send the notification using MailService
-     */
-    public function toMail($notifiable)
+    public function toBrevoVerification($notifiable): void
     {
         try {
             $token = Str::random(64);
-            
-            // Store verification token
-            \DB::table('email_verification_tokens')->updateOrInsert(
+            DB::table('email_verification_tokens')->updateOrInsert(
                 ['email' => $notifiable->email],
-                [
-                    'token' => hash('sha256', $token),
-                    'created_at' => now()
-                ]
+                ['token' => hash('sha256', $token), 'created_at' => now()]
             );
-
-            $mailService = app(MailService::class);
-            $mailService->sendVerificationEmail($notifiable, $token);
-            
-            \Log::info('Verification email sent successfully', ['email' => $notifiable->email]);
+            app(MailService::class)->sendVerificationEmail($notifiable, $token);
+            Log::info('Verification email sent', ['email' => $notifiable->email]);
         } catch (\Exception $e) {
-            \Log::error('Failed to send verification email', [
-                'email' => $notifiable->email,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            // Don't throw - just log the error
+            Log::error('Verification email failed', ['email' => $notifiable->email, 'error' => $e->getMessage()]);
         }
-        
-        // Return a dummy MailMessage to satisfy Laravel's notification system
-        return new MailMessage();
     }
 }

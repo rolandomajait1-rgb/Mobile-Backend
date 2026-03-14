@@ -87,7 +87,7 @@ export default function Login() {
       localStorage.setItem("user_name", response.data.user.name);
 
       // Get user role from response
-      const userRole = response.data.role;
+      const userRole = response.data.user?.role || 'user';
       localStorage.setItem("user_role", userRole);
 
       // Show success message
@@ -104,7 +104,13 @@ export default function Login() {
         }
       }, 1500);
     } catch (error) {
-      if (error.response && error.response.status === 403 && error.response.data.requires_verification) {
+      const msg = error.response?.data?.errors?.email?.[0] || error.response?.data?.message || '';
+      const needsVerification = msg.toLowerCase().includes('verify');
+      if (needsVerification) {
+        setErrors({ ...error.response?.data?.errors, general: msg || 'Please verify your email before logging in.' });
+        setShowResendVerification(true);
+        setResendEmail(formData.email);
+      } else if (error.response && error.response.status === 403 && error.response.data?.requires_verification) {
         setErrors({ general: error.response.data.message });
         setShowResendVerification(true);
         setResendEmail(formData.email);
