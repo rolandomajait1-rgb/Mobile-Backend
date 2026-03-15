@@ -73,9 +73,7 @@ class AuthController extends Controller
                     : 'Registration successful! However, verification email failed to send. Use resend verification.',
                 'email_sent' => $emailSent,
                 'requires_verification' => true,
-            ], 201)->header('Access-Control-Allow-Origin', '*')
-              ->header('Access-Control-Allow-Methods', '*')
-              ->header('Access-Control-Allow-Headers', '*');
+            ], 201);
         } catch (\Exception $e) {
             Log::error('Registration failed', [
                 'email' => $request->email,
