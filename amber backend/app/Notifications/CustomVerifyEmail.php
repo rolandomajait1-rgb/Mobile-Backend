@@ -22,15 +22,26 @@ class CustomVerifyEmail extends Notification implements BrevoVerificationNotific
     public function toBrevoVerification($notifiable): void
     {
         try {
+            if (!DB::getSchemaBuilder()->hasTable('email_verification_tokens')) {
+                Log::error('email_verification_tokens table missing');
+                throw new \Exception('Verification system not configured');
+            }
+
             $token = Str::random(64);
             DB::table('email_verification_tokens')->updateOrInsert(
                 ['email' => $notifiable->email],
                 ['token' => hash('sha256', $token), 'created_at' => now()]
             );
-            app(MailService::class)->sendVerificationEmail($notifiable, $token);
+            
+            $sent = app(MailService::class)->sendVerificationEmail($notifiable, $token);
+            if (!$sent) {
+                throw new \Exception('Failed to send verification email');
+            }
+            
             Log::info('Verification email sent', ['email' => $notifiable->email]);
         } catch (\Exception $e) {
             Log::error('Verification email failed', ['email' => $notifiable->email, 'error' => $e->getMessage()]);
+            throw $e;
         }
     }
 }

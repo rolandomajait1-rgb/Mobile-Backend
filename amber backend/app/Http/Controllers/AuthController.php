@@ -36,6 +36,11 @@ class AuthController extends Controller
         ]);
 
         try {
+            if (!DB::getSchemaBuilder()->hasTable('email_verification_tokens')) {
+                Log::error('email_verification_tokens table does not exist. Run migrations.');
+                return response()->json(['message' => 'Server configuration error. Contact support.'], 500);
+            }
+
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -43,18 +48,19 @@ class AuthController extends Controller
                 'role' => 'user',
             ]);
 
-            $token = $user->createToken('auth-token')->plainTextToken;
-
-            // Send verification email directly (more reliable than event)
+            $emailSent = false;
             try {
                 $user->sendEmailVerificationNotification();
+                $emailSent = true;
                 Log::info('Verification email sent', ['email' => $user->email]);
             } catch (\Exception $e) {
-                Log::error('Email verification failed but registration succeeded', [
+                Log::error('Email verification failed during registration', [
                     'email' => $user->email,
                     'error' => $e->getMessage(),
                 ]);
             }
+
+            $token = $user->createToken('auth-token')->plainTextToken;
 
             return response()->json([
                 'user' => [
@@ -65,7 +71,10 @@ class AuthController extends Controller
                     'email_verified_at' => $user->email_verified_at,
                 ],
                 'token' => $token,
-                'message' => 'Registration successful! Check your email to verify your account.',
+                'message' => $emailSent 
+                    ? 'Registration successful! Check your email to verify your account.'
+                    : 'Registration successful! However, verification email failed to send. Use resend verification.',
+                'email_sent' => $emailSent,
             ], 201)->header('Access-Control-Allow-Origin', '*')
               ->header('Access-Control-Allow-Methods', '*')
               ->header('Access-Control-Allow-Headers', '*');
@@ -320,13 +329,18 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
-            return response()->json(['message' => 'If that email is registered, a verification link will be sent.'], 200);
+            return response()->json(['message' => 'User not found. Please register first.'], 404);
         }
         if ($user->hasVerifiedEmail()) {
             return response()->json(['message' => 'Email already verified. You can log in.']);
         }
 
-        $user->sendEmailVerificationNotification();
-        return response()->json(['message' => 'Verification link sent. Check your inbox.']);
+        try {
+            $user->sendEmailVerificationNotification();
+            return response()->json(['message' => 'Verification link sent. Check your inbox.']);
+        } catch (\Exception $e) {
+            Log::error('Resend verification failed', ['email' => $user->email, 'error' => $e->getMessage()]);
+            return response()->json(['message' => 'Failed to send verification email. Try again later.'], 500);
+        }
     }
 }
