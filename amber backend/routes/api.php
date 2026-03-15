@@ -26,7 +26,9 @@ Route::get('/health', function() {
         'status' => 'healthy',
         'timestamp' => now()->toIso8601String(),
         'service' => 'La Verdad Herald API',
-        'version' => '1.0.0',
+        'version' => '1.0.1',
+        'cors_fix_deployed' => true,
+        'git_commit' => '145ff3f',
     ]);
 });
 
