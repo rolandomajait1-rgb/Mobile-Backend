@@ -105,16 +105,21 @@ class SubscriberController extends Controller
 
     /**
      * Unsubscribe a subscriber (public endpoint)
+     * DELETE /subscribers/{email}
      */
-    public function unsubscribe(Request $request)
+    public function unsubscribe(string $email)
     {
-        $validated = $request->validate([
-            'email' => 'required|email|exists:subscribers',
-        ]);
+        $subscriber = Subscriber::where('email', $email)->first();
+        
+        if (!$subscriber) {
+            return response()->json(['message' => 'Email not found'], 404);
+        }
 
-        $subscriber = Subscriber::where('email', $validated['email'])->first();
         $subscriber->update(['subscribed' => false]);
 
-        return response()->json(['message' => 'Successfully unsubscribed!']);
+        return response()->json([
+            'message' => 'Successfully unsubscribed!',
+            'email' => $email
+        ]);
     }
 }
