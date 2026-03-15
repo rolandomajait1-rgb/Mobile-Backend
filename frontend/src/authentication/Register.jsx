@@ -59,7 +59,7 @@ export default function Register() {
         // Proceed anyway - backend may still be starting
       }
 
-      const response = await axios.post('/api/register', {
+      const response = await axios.post('/api/auth/register', {
         name: formData.name,
         email: formData.email,
         password: formData.password,
