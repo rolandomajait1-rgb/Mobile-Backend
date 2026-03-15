@@ -96,6 +96,9 @@ Route::middleware('auth:sanctum')->group(function () {
 // List Published Articles (Public)
 Route::get('/articles', [ArticleController::class, 'publicIndex']);
 
+// List Published Articles (Public) - Alias for backward compatibility
+Route::get('/articles/public', [ArticleController::class, 'publicIndex']);
+
 // Get Single Published Article (Public)
 Route::get('/articles/{article}', [ArticleController::class, 'publicShow']);
 
