@@ -60,8 +60,6 @@ class AuthController extends Controller
                 ]);
             }
 
-            $token = $user->createToken('auth-token')->plainTextToken;
-
             return response()->json([
                 'user' => [
                     'id' => $user->id,
@@ -70,11 +68,11 @@ class AuthController extends Controller
                     'role' => $user->role,
                     'email_verified_at' => $user->email_verified_at,
                 ],
-                'token' => $token,
                 'message' => $emailSent 
-                    ? 'Registration successful! Check your email to verify your account.'
+                    ? 'Registration successful! Please verify your email before logging in. Check your inbox.'
                     : 'Registration successful! However, verification email failed to send. Use resend verification.',
                 'email_sent' => $emailSent,
+                'requires_verification' => true,
             ], 201)->header('Access-Control-Allow-Origin', '*')
               ->header('Access-Control-Allow-Methods', '*')
               ->header('Access-Control-Allow-Headers', '*');
