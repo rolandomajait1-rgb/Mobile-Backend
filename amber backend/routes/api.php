@@ -58,8 +58,12 @@ Route::post('/auth/password/forgot', [AuthController::class, 'forgotPassword'])
 Route::post('/auth/password/reset', [AuthController::class, 'resetPassword'])
     ->middleware('throttle:5,1');
 
-// Email Verification
+// Email Verification (primary API endpoint used by tests and clients)
 Route::get('/auth/email/verify', [AuthController::class, 'verifyEmail'])
+    ->middleware('throttle:6,1');
+
+// Email Verification (frontend SPA alias: /verify-email -> /api/email/verify-token)
+Route::get('/email/verify-token', [AuthController::class, 'verifyEmail'])
     ->middleware('throttle:6,1');
 
 // Resend Email Verification

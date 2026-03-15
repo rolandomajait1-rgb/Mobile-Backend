@@ -3,9 +3,11 @@ set -e
 
 echo "Starting Laravel application..."
 
-# Clear any cached config
-echo "Clearing config cache..."
+# Clear ALL caches
+echo "Clearing all caches..."
 php artisan config:clear || true
+php artisan route:clear || true
+php artisan cache:clear || true
 
 # Wait for database to be ready
 echo "Waiting for database..."
