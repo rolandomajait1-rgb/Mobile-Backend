@@ -1,12 +1,14 @@
 import axios from "axios";
 
-const envBaseUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
+const envBaseUrl =
+  import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
 const isLocalhost =
   typeof window !== "undefined" &&
-  (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+  (window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1");
 const fallbackBaseUrl = isLocalhost
   ? "http://localhost:8000"
-  : "https://mobile-backend-84tg.onrender.com";
+  : "https://mobile-backend-r0ut.onrender.com";
 const BASE_URL = (envBaseUrl || fallbackBaseUrl).replace(/\/+$/, "");
 
 axios.defaults.baseURL = BASE_URL;
