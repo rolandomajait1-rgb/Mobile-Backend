@@ -38,8 +38,14 @@ class MailService
             return false;
         }
 
+        $frontendUrl = rtrim(env('FRONTEND_URL', config('app.url', '')), '/');
+        if (empty($frontendUrl)) {
+            Log::error('FRONTEND_URL not set in production - password reset links will be invalid');
+            return false;
+        }
+
         try {
-            $url = rtrim(env('FRONTEND_URL'), '/') . '/reset-password?token=' . $token . '&email=' . urlencode($user->email);
+            $url = $frontendUrl . '/reset-password?token=' . $token . '&email=' . urlencode($user->email);
             $html = view('emails.reset-password', ['user' => $user, 'resetUrl' => $url])->render();
             return $this->send($user, 'Reset Your Password', $html);
         } catch (\Exception $e) {
