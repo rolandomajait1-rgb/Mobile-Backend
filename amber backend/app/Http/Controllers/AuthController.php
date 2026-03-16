@@ -52,8 +52,10 @@ class AuthController extends Controller
             try {
                 $user->sendEmailVerificationNotification();
                 $emailSent = true;
+                $this->trackAnalytics($request->email, 'sent', $request);
                 Log::info('Verification email sent', ['email' => $user->email]);
             } catch (\Exception $e) {
+                $this->trackAnalytics($request->email, 'failed', $request);
                 Log::error('Email verification failed during registration', [
                     'email' => $user->email,
                     'error' => $e->getMessage(),
@@ -298,9 +300,11 @@ class AuthController extends Controller
             ->first();
 
         if (!$record) {
+            $this->trackAnalytics($request->query('email', 'unknown'), 'failed', $request);
             return response()->json(['message' => 'Invalid verification token'], 400);
         }
         if (now()->diffInHours($record->created_at) > 24) {
+            $this->trackAnalytics($record->email, 'expired', $request);
             return response()->json(['message' => 'Verification token expired'], 400);
         }
 
@@ -314,6 +318,7 @@ class AuthController extends Controller
 
         $user->markEmailAsVerified();
         DB::table('email_verification_tokens')->where('email', $record->email)->delete();
+        $this->trackAnalytics($record->email, 'verified', $request);
 
         return response()->json(['message' => 'Email verified successfully']);
     }
@@ -333,10 +338,30 @@ class AuthController extends Controller
 
         try {
             $user->sendEmailVerificationNotification();
+            $this->trackAnalytics($request->email, 'resent', $request);
             return response()->json(['message' => 'Verification link sent. Check your inbox.']);
         } catch (\Exception $e) {
+            $this->trackAnalytics($request->email, 'failed', $request);
             Log::error('Resend verification failed', ['email' => $user->email, 'error' => $e->getMessage()]);
             return response()->json(['message' => 'Failed to send verification email. Try again later.'], 500);
+        }
+    }
+
+    /**
+     * Track email verification analytics
+     */
+    private function trackAnalytics(string $email, string $eventType, Request $request): void
+    {
+        try {
+            DB::table('email_verification_analytics')->insert([
+                'email' => $email,
+                'event_type' => $eventType,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'created_at' => now(),
+            ]);
+        } catch (\Exception $e) {
+            Log::warning('Failed to track analytics', ['error' => $e->getMessage()]);
         }
     }
 }

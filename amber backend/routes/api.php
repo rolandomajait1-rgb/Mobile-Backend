@@ -32,6 +32,24 @@ Route::get('/health', function() {
     ]);
 });
 
+// CORS Test Endpoint
+Route::get('/cors-test', function() {
+    return response()->json([
+        'message' => 'CORS is working!',
+        'origin' => request()->header('Origin'),
+        'method' => request()->method(),
+        'timestamp' => now()->toIso8601String(),
+    ]);
+});
+
+Route::post('/cors-test', function() {
+    return response()->json([
+        'message' => 'POST request successful!',
+        'data' => request()->all(),
+        'origin' => request()->header('Origin'),
+    ]);
+});
+
 /*
 |--------------------------------------------------------------------------
 | Authentication Resources
@@ -58,16 +76,12 @@ Route::post('/auth/password/forgot', [AuthController::class, 'forgotPassword'])
 Route::post('/auth/password/reset', [AuthController::class, 'resetPassword'])
     ->middleware('throttle:5,1');
 
-// Email Verification (primary API endpoint used by tests and clients)
-Route::get('/auth/email/verify', [AuthController::class, 'verifyEmail'])
-    ->middleware('throttle:6,1');
-
-// Email Verification (frontend SPA alias: /verify-email -> /api/email/verify-token)
-Route::get('/email/verify-token', [AuthController::class, 'verifyEmail'])
+// Email Verification
+Route::get('/email/verify', [AuthController::class, 'verifyEmail'])
     ->middleware('throttle:6,1');
 
 // Resend Email Verification
-Route::post('/auth/email/resend', [AuthController::class, 'resendVerification'])
+Route::post('/email/resend', [AuthController::class, 'resendVerification'])
     ->middleware('throttle:3,1');
 
 /*

@@ -5,12 +5,13 @@ namespace App\Notifications;
 use App\Contracts\BrevoVerificationNotification;
 use App\Services\MailService;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
-class CustomVerifyEmail extends Notification implements BrevoVerificationNotification
+class CustomVerifyEmail extends Notification implements BrevoVerificationNotification, ShouldQueue
 {
     use Queueable;
 
